@@ -1,0 +1,10 @@
+# 在backend/main.py的开头添加这些代码来禁用代理
+
+import os
+
+# 禁用代理
+os.environ.pop('HTTP_PROXY', None)
+os.environ.pop('HTTPS_PROXY', None)
+os.environ.pop('http_proxy', None)
+os.environ.pop('https_proxy', None)
+os.environ.pop('ALL_PROXY', None)

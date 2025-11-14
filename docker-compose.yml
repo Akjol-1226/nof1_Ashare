@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # 数据库
+  postgres:
+    image: postgres:15
+    container_name: nof1_ashare_db
+    environment:
+      POSTGRES_USER: nof1
+      POSTGRES_PASSWORD: nof1password
+      POSTGRES_DB: nof1_ashare
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nof1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: nof1_ashare_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build: ./backend
+    container_name: nof1_ashare_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://nof1:nof1password@postgres:5432/nof1_ashare
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: python main.py
+
+  # 前端服务
+  frontend:
+    build: ./frontend
+    container_name: nof1_ashare_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_WS_URL=ws://localhost:8000
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    depends_on:
+      - backend
+    command: npm start
+
+volumes:
+  postgres_data:
+  redis_data:
+
+

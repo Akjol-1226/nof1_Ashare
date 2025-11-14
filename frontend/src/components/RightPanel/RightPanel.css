@@ -1,0 +1,267 @@
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.tab {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  color: #374151;
+}
+
+.tab.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.ai-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.nav-btn {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.ai-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ai-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.125rem;
+}
+
+.ai-details {
+  flex: 1;
+}
+
+.ai-name-text {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.ai-stats {
+  font-size: 0.75rem;
+  color: #6b7280;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.portfolio-view {
+  padding: 1rem;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-item {
+  background: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.summary-item .label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.summary-item .value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.positions-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.positions-table th {
+  text-align: left;
+  padding: 0.75rem 0.5rem;
+  color: #6b7280;
+  font-weight: 500;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.positions-table td {
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.stock-name {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.orders-view, .decisions-view {
+  padding: 1rem;
+}
+
+.orders-list, .decisions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.order-item, .decision-item {
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.order-header, .decision-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.direction, .decision-type {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.direction.buy {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.direction.sell {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.decision-type.buy {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.decision-type.sell {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.decision-type.hold {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.status {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.status.filled {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status.rejected {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.order-body, .decision-action {
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.decision-reasoning {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+}
+
+.order-time, .decision-time {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.positive {
+  color: #10b981;
+}
+
+.negative {
+  color: #ef4444;
+}
+
+.success {
+  color: #10b981;
+}
+
+.error {
+  color: #ef4444;
+}
+
+

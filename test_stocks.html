@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>6只可交易股票实时行情测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+        }
+        
+        .status {
+            padding: 1.5rem 2rem;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .controls {
+            padding: 1rem 2rem;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .content {
+            padding: 2rem;
+        }
+        
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .stock-card {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+        
+        .stock-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+        
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        
+        .stock-title h3 {
+            font-size: 1.25rem;
+            color: #111827;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stock-code {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .stock-price {
+            text-align: right;
+        }
+        
+        .price {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #111827;
+        }
+        
+        .change {
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            display: inline-block;
+            margin-top: 0.25rem;
+        }
+        
+        .change.positive {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+        
+        .change.negative {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        
+        .stock-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .detail-item {
+            font-size: 0.875rem;
+        }
+        
+        .detail-label {
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-value {
+            color: #111827;
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 3rem;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 6只可交易股票实时行情</h1>
+            <p>nof1.AShare - AI模拟交易系统</p>
+        </div>
+        
+        <div class="status">
+            <div class="status-item">
+                <span class="status-dot"></span>
+                <span id="status-text">准备就绪</span>
+            </div>
+            <div class="status-item">
+                <span id="update-time">未更新</span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="fetchQuotes()">🔄 刷新行情</button>
+            <button class="btn btn-primary" onclick="startAutoRefresh()" id="auto-btn">▶️ 自动刷新(10秒)</button>
+        </div>
+        
+        <div class="content">
+            <div id="error-container"></div>
+            <div id="stock-container" class="loading">
+                正在加载数据...
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8888';
+        let autoRefreshInterval = null;
+        
+        const stockConfig = {
+            '000063': '中兴通讯',
+            '300750': '宁德时代',
+            '600703': '三安光电',
+            '002594': '比亚迪',
+            '688256': '寒武纪',
+            '600276': '恒瑞医药'
+        };
+        
+        function updateStatus(text, isError = false) {
+            const statusEl = document.getElementById('status-text');
+            statusEl.textContent = text;
+            statusEl.style.color = isError ? '#dc2626' : '#111827';
+        }
+        
+        function updateTime() {
+            const timeEl = document.getElementById('update-time');
+            const now = new Date();
+            timeEl.textContent = `最后更新: ${now.toLocaleTimeString('zh-CN')}`;
+        }
+        
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.innerHTML = `
+                <div class="error">
+                    <strong>❌ 错误:</strong> ${message}
+                </div>
+            `;
+        }
+        
+        function clearError() {
+            document.getElementById('error-container').innerHTML = '';
+        }
+        
+        async function fetchQuotes() {
+            updateStatus('正在获取数据...');
+            clearError();
+            
+            try {
+                const response = await fetch(`${API_URL}/api/market/quotes?limit=10`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                displayQuotes(data.quotes);
+                updateStatus('数据更新成功 ✓');
+                updateTime();
+                
+            } catch (error) {
+                console.error('获取数据失败:', error);
+                updateStatus('数据获取失败', true);
+                showError(`无法获取行情数据: ${error.message}。请确保后端服务已启动 (python backend/main.py)`);
+                
+                // 显示示例数据
+                displayEmptyState();
+            }
+        }
+        
+        function displayQuotes(quotes) {
+            const container = document.getElementById('stock-container');
+            
+            if (!quotes || quotes.length === 0) {
+                displayEmptyState();
+                return;
+            }
+            
+            // 创建股票代码到行情数据的映射
+            const quoteMap = {};
+            quotes.forEach(quote => {
+                quoteMap[quote.code] = quote;
+            });
+            
+            let html = '<div class="stock-grid">';
+            
+            // 按照配置的顺序显示股票
+            for (const [code, name] of Object.entries(stockConfig)) {
+                const quote = quoteMap[code];
+                
+                if (quote) {
+                    const changeClass = quote.change_percent >= 0 ? 'positive' : 'negative';
+                    const changeSign = quote.change_percent >= 0 ? '+' : '';
+                    
+                    html += `
+                        <div class="stock-card">
+                            <div class="stock-header">
+                                <div class="stock-title">
+                                    <h3>${name}</h3>
+                                    <div class="stock-code">${code}</div>
+                                </div>
+                                <div class="stock-price">
+                                    <div class="price">¥${quote.price.toFixed(2)}</div>
+                                    <div class="change ${changeClass}">
+                                        ${changeSign}${quote.change_percent.toFixed(2)}%
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stock-details">
+                                <div class="detail-item">
+                                    <div class="detail-label">今开</div>
+                                    <div class="detail-value">¥${quote.open_price.toFixed(2)}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">昨收</div>
+                                    <div class="detail-value">¥${quote.close_yesterday.toFixed(2)}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">最高</div>
+                                    <div class="detail-value">¥${quote.high.toFixed(2)}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">最低</div>
+                                    <div class="detail-value">¥${quote.low.toFixed(2)}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">成交量</div>
+                                    <div class="detail-value">${(quote.volume / 10000).toFixed(2)}万手</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">成交额</div>
+                                    <div class="detail-value">¥${(quote.amount / 100000000).toFixed(2)}亿</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // 股票数据不可用
+                    html += `
+                        <div class="stock-card">
+                            <div class="stock-header">
+                                <div class="stock-title">
+                                    <h3>${name}</h3>
+                                    <div class="stock-code">${code}</div>
+                                </div>
+                            </div>
+                            <div class="empty">暂无数据</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function displayEmptyState() {
+            const container = document.getElementById('stock-container');
+            container.innerHTML = '<div class="empty">暂无行情数据</div>';
+        }
+        
+        function startAutoRefresh() {
+            const btn = document.getElementById('auto-btn');
+            
+            if (autoRefreshInterval) {
+                // 停止自动刷新
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+                btn.textContent = '▶️ 自动刷新(10秒)';
+                updateStatus('自动刷新已停止');
+            } else {
+                // 启动自动刷新
+                autoRefreshInterval = setInterval(fetchQuotes, 10000);
+                btn.textContent = '⏸️ 停止自动刷新';
+                updateStatus('自动刷新已启动 (每10秒)');
+                fetchQuotes(); // 立即刷新一次
+            }
+        }
+        
+        // 页面加载时自动获取一次数据
+        window.addEventListener('load', () => {
+            fetchQuotes();
+        });
+    </script>
+</body>
+</html>
+
