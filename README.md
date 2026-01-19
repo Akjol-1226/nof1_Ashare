@@ -337,8 +337,6 @@ docker-compose down
 5. **生产环境** - 建议使用PostgreSQL替代SQLite
 
 ## 🙏 致谢
-
-- [AKShare](https://github.com/akfamily/akshare) - A股数据接口
 - [nof1.ai](https://nof1.ai) - 项目设计灵感来源
 - [FastAPI](https://fastapi.tiangolo.com/) - 高性能Web框架
 - [Next.js](https://nextjs.org/) - React全栈框架
