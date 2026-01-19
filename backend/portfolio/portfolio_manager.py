@@ -3,7 +3,7 @@
 处理持仓更新、资金检查、可卖数量计算等
 """
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, date
 import logging
@@ -39,16 +39,30 @@ class PortfolioManager:
         Returns:
             持仓信息字典
         """
-        ai = self.db.query(AI).filter(AI.id == ai_id).first()
+        # 使用 joinedload 预加载 positions，确保在一个事务快照中读取 AI 和持仓
+        # 解决并发交易时的读写不一致导致资产波动的问题
+        ai = self.db.query(AI).options(joinedload(AI.positions)).filter(AI.id == ai_id).first()
         if not ai:
             return {}
         
-        positions = self.db.query(Position).filter(Position.ai_id == ai_id).all()
+        # refresh 会导致 joinedload 的 positions 失效并触发懒加载，反而破坏了原子性
+        # 所以删除了 refresh
         
-        # 计算总收益和收益率
-        total_profit = ai.total_profit
-        initial_cash = 100000.0  # 假设初始资金为10万
-        profit_rate = (total_profit / initial_cash) * 100 if initial_cash > 0 else 0.0
+        positions = ai.positions
+        
+        # T+1解锁逻辑（已提取到独立方法）
+        self.update_available_quantity_daily(ai.id)
+        
+        # 刷新位置信息以获取可能的更新
+        # 注意：由于update_available_quantity_daily可能修改了DB但未刷新当前session中的对象，
+        # 我们最好重新查询或依赖ORM的Identity Map。
+        # 这里positions变量关联的对象应该已经被更新了（如果在同一个session中）
+            
+            
+        # 计算总收益和收益率（基于当前总资产）
+        # 注意：这里使用 ai.current_cash 和 positions 的最新状态，它们是原子的
+        total_profit = ai.total_assets - ai.initial_cash
+        profit_rate = (total_profit / ai.initial_cash) * 100 if ai.initial_cash > 0 else 0.0
 
         return {
             'ai_id': ai.id,
@@ -62,17 +76,30 @@ class PortfolioManager:
     
     def _position_to_dict(self, position: Position) -> Dict:
         """将Position对象转换为字典"""
+        from stock_config import get_stock_name
+        
+        # 直接通过stock_code映射获取stock_name
+        # 1. 优先使用DB里的名称（前提是它不等于代码，说明是有效的中文名）
+        # 2. 如果DB里存的是代码（旧数据脏数据），则回退查配置
+        db_name = position.stock_name
+        if db_name and db_name != position.stock_code:
+            stock_name = db_name
+        else:
+            stock_name = get_stock_name(position.stock_code) or position.stock_code
+        
         return {
             'stock_code': position.stock_code,
-            'stock_name': position.stock_name,
+            'stock_name': stock_name,  # 使用映射后的名称
             'quantity': position.quantity,
             'available_quantity': position.available_quantity,
             'cost_price': position.avg_cost,  # 兼容性字段名
             'avg_cost': position.avg_cost,
             'current_price': position.current_price,
             'market_value': position.market_value,
-            'profit_loss': position.profit,
-            'profit_loss_percent': position.profit_rate
+            'profit_loss': position.profit,  # 兼容性字段名
+            'profit_loss_percent': position.profit_rate,  # 兼容性字段名
+            'profit': position.profit,
+            'profit_rate': position.profit_rate
         }
     
     def check_available_cash(self, ai_id: int, required_amount: float) -> Tuple[bool, float]:
@@ -155,16 +182,36 @@ class PortfolioManager:
             position.quantity = new_quantity
             # 注意：买入当日不能卖出（T+1），所以不增加available_quantity
             position.current_price = price
+            position.last_trade_date = datetime.now()  # 更新最后交易日期
+            
+            # 更新市值和盈亏
+            position.market_value = position.quantity * position.current_price
+            cost_basis = position.avg_cost * position.quantity
+            position.profit = position.market_value - cost_basis
+            if cost_basis > 0:
+                position.profit_rate = (position.profit / cost_basis) * 100
+            else:
+                position.profit_rate = 0.0
         else:
             # 创建新持仓
+            avg_cost = (price * quantity + fee) / quantity
+            market_value = quantity * price
+            cost_basis = avg_cost * quantity
+            profit = market_value - cost_basis
+            profit_rate = (profit / cost_basis) * 100 if cost_basis > 0 else 0.0
+            
             position = Position(
                 ai_id=ai_id,
                 stock_code=stock_code,
                 stock_name=stock_name,
                 quantity=quantity,
                 available_quantity=0,  # T+1，当日买入不可卖
-                avg_cost=(price * quantity + fee) / quantity,
-                current_price=price
+                avg_cost=avg_cost,
+                current_price=price,
+                market_value=market_value,
+                profit=profit,
+                profit_rate=profit_rate,
+                last_trade_date=datetime.now()  # 设置最后交易日期
             )
             self.db.add(position)
         
@@ -206,10 +253,20 @@ class PortfolioManager:
         position.quantity -= quantity
         position.available_quantity -= quantity
         position.current_price = price
+        position.last_trade_date = datetime.now()  # 更新最后交易日期
         
         # 如果持仓清零，删除记录
         if position.quantity == 0:
             self.db.delete(position)
+        else:
+            # 更新市值和盈亏
+            position.market_value = position.quantity * position.current_price
+            cost_basis = position.avg_cost * position.quantity
+            position.profit = position.market_value - cost_basis
+            if cost_basis > 0:
+                position.profit_rate = (position.profit / cost_basis) * 100
+            else:
+                position.profit_rate = 0.0
         
         # 更新AI的现金
         ai = self.db.query(AI).filter(AI.id == ai_id).first()
@@ -218,23 +275,43 @@ class PortfolioManager:
         self.db.commit()
         logger.info(f"AI {ai_id} sold {quantity} shares of {stock_code} at {price}")
     
-    def update_available_quantity_daily(self, ai_id: int):
         """
         每日更新可卖数量（T+1结算）
         
-        在每个交易日开盘前调用，将前一日买入的股票变为可卖
+        根据交易日期检查：
+        如果持仓的最后交易日期是"今天之前"，说明经过了一个交易日，
+        此时应该将所有冻结的持仓解锁（变为可用）。
         
         Args:
             ai_id: AI ID
         """
+        # 注意：这里需要确保查询出的对象在这个session中被跟踪
         positions = self.db.query(Position).filter(Position.ai_id == ai_id).all()
         
-        for position in positions:
-            # 将所有持仓变为可卖（前一日买入的已经过了T+1）
-            position.available_quantity = position.quantity
+        dirty = False
+        today = date.today()
         
-        self.db.commit()
-        logger.info(f"Updated available quantity for AI {ai_id}")
+        for pos in positions:
+            # 如果有持仓，且可用数小于总数
+            if pos.quantity > 0 and pos.available_quantity < pos.quantity:
+                # 检查日期：使用last_trade_date
+                # 如果last_trade_date为空，假设是旧数据，默认解锁
+                is_past = False
+                if pos.last_trade_date:
+                    if pos.last_trade_date.date() < today:
+                        is_past = True
+                else:
+                    # 无日期数据的旧持仓，默认解锁
+                    is_past = True
+                
+                if is_past:
+                    pos.available_quantity = pos.quantity
+                    dirty = True
+                    logger.info(f"🔓 T+1解锁: AI {pos.ai_id} {pos.stock_code} {pos.quantity}股 (Last Trade: {pos.last_trade_date})")
+        
+        if dirty:
+            self.db.commit()
+            logger.info(f"Updated available quantity for AI {ai_id}")
     
     def update_market_value(
         self,
@@ -257,10 +334,15 @@ class PortfolioManager:
                 current_price = stock_prices[position.stock_code]
                 position.current_price = current_price
                 position.market_value = current_price * position.quantity
-                position.profit_loss = position.market_value - position.cost_price * position.quantity
+                # 计算盈亏：市值 - 成本
+                cost_basis = position.avg_cost * position.quantity
+                position.profit = position.market_value - cost_basis
                 
-                if position.cost_price > 0:
-                    position.profit_loss_percent = (position.profit_loss / (position.cost_price * position.quantity)) * 100
+                # 计算盈亏比例
+                if cost_basis > 0:
+                    position.profit_rate = (position.profit / cost_basis) * 100
+                else:
+                    position.profit_rate = 0.0
                 
                 total_market_value += position.market_value
         

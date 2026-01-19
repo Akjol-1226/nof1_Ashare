@@ -64,22 +64,40 @@ except Exception as e:
     print(f"Warning: Failed to patch requests: {e}", file=sys.stderr)
 
 # 方法5: 为httpx也禁用代理（如果使用）
+# try:
+#     import httpx
+#     
+#     _original_client = httpx.Client
+#     
+#     class NoProxyClient(_original_client):
+#         def __init__(self, *args, **kwargs):
+#             kwargs.pop('proxies', None)
+#             kwargs['proxies'] = {}
+#             kwargs['trust_env'] = False
+#             super().__init__(*args, **kwargs)
+#     
+#     httpx.Client = NoProxyClient
+#     
+# except (ImportError, Exception) as e:
+#     pass  # httpx可能未安装
+
+# 方法6: 强制设置requests和urllib3不信任系统代理
 try:
-    import httpx
-    
-    _original_client = httpx.Client
-    
-    class NoProxyClient(_original_client):
-        def __init__(self, *args, **kwargs):
-            kwargs.pop('proxies', None)
-            kwargs['proxies'] = {}
-            kwargs['trust_env'] = False
-            super().__init__(*args, **kwargs)
-    
-    httpx.Client = NoProxyClient
-    
-except (ImportError, Exception) as e:
-    pass  # httpx可能未安装
+    import requests
+    # Monkey patch getproxies函数
+    import urllib.request as urllib_request
+    urllib_request.getproxies = lambda: {}
+    urllib_request.proxy_bypass = lambda x: True
+except:
+    pass
+
+# 方法7: 对于urllib3也强制禁用
+try:
+    import urllib3
+    # 禁用urllib3的代理警告
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+except:
+    pass
 
 print("✓ 代理已强制禁用（所有HTTP库）")
 

@@ -4,7 +4,7 @@
 """
 
 from sqlalchemy.orm import Session
-from typing import Optional, Dict, Tuple
+from typing import Optional, Dict, Tuple, Any
 from datetime import datetime
 import logging
 
@@ -75,19 +75,28 @@ class MatchingEngine:
 
         current_price = stock_info['price']
         yesterday_close = stock_info['close_yesterday']
+        
+        # 🔒 价格安全检查：防止数据源异常导致0元成交
+        if current_price <= 0:
+            logger.error(f"❌ Invalid price data: {order.stock_code} price={current_price}")
+            return False, f"Invalid market price ({current_price}) for {order.stock_code}"
+        if yesterday_close <= 0:
+            logger.warning(f"⚠️ Invalid close_yesterday: {order.stock_code} close_yesterday={yesterday_close}")
+            # 昨收价可以允许缺失，但要记录告警
+
+        # 优先尝试获取 Biying 五档盘口，用于更真实的撮合；失败则退化为“最新价 vs 委托价”的简单逻辑
+        order_book: Optional[Dict[str, Any]] = None
+        try:
+            if hasattr(self.akshare_client, "get_order_book"):
+                order_book = self.akshare_client.get_order_book(order.stock_code)  # type: ignore
+        except Exception as e:
+            logger.warning(f"Failed to get order book for {order.stock_code}: {e}")
+            order_book = None
 
         # 确定成交价格
-        if order.order_type == 'market':
-            # 市价单：按当前价成交
-            match_price = current_price
-        else:
-            # 限价单：检查是否满足价格条件
-            if order.direction == 'buy' and current_price <= order.price:
-                match_price = order.price  # 以限价成交
-            elif order.direction == 'sell' and current_price >= order.price:
-                match_price = order.price  # 以限价成交
-            else:
-                return False, f"Limit order price not met (current: {current_price}, limit: {order.price})"
+        match_price, reason = self._determine_match_price(order, current_price, order_book)
+        if match_price is None:
+            return False, reason
 
         # 验证订单合法性（资金、涨跌停等）
         is_valid, msg = self._validate_order_execution(
@@ -161,6 +170,95 @@ class MatchingEngine:
                 return False, f"Price at lower limit ({lower:.2f})"
         
         return True, ""
+
+    def _determine_match_price(
+        self,
+        order: Order,
+        current_price: float,
+        order_book: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[Optional[float], str]:
+        """
+        根据最新价 + （可选）五档盘口，确定更合理的成交价。
+        优先使用盘口撮合；如果没有盘口数据，则退化为“委托价 vs 最新价”的简单撮合。
+        """
+        # 🔒 第二道防线：确保输入价格有效
+        if current_price <= 0:
+            logger.error(f"❌ Invalid current_price in _determine_match_price: {current_price}")
+            return None, f"Invalid current price: {current_price}"
+        
+        # 市价单：如果有盘口，用对手盘一档价；否则用最新价
+        if order.order_type == "market":
+            if order_book:
+                asks = order_book.get("ask_prices") or []
+                bids = order_book.get("bid_prices") or []
+
+                if order.direction == "buy" and asks:
+                    return float(asks[0]), ""
+                if order.direction == "sell" and bids:
+                    return float(bids[0]), ""
+
+            # 没有盘口或对应一侧为空，退化为按最新价成交
+            return float(current_price), ""
+
+        # 限价单：需要 price
+        if order.price is None:
+            return None, "Limit order requires price"
+
+        limit_price = float(order.price)
+
+        # 如果没有盘口，退化为：当最新价“穿过”委托价时，以最新价成交
+        if not order_book:
+            if order.direction == "buy":
+                if current_price <= limit_price:
+                    # 用户愿意以不高于 limit_price 购买，给他当前更好的价格
+                    return float(current_price), ""
+                return None, f"Limit order price not met (current: {current_price}, limit: {limit_price})"
+            else:  # sell
+                if current_price >= limit_price:
+                    # 用户愿意以不低于 limit_price 卖出，给他当前更好的价格
+                    return float(current_price), ""
+                return None, f"Limit order price not met (current: {current_price}, limit: {limit_price})"
+
+        # 有盘口时，用五档盘口撮合
+        asks = order_book.get("ask_prices") or []
+        bids = order_book.get("bid_prices") or []
+
+        best_ask = float(asks[0]) if asks else None
+        best_bid = float(bids[0]) if bids else None
+
+        if order.direction == "buy":
+            # 买入：如果限价 >= 卖一，认为吃掉卖一，在卖一价成交（不让用户成交价比委托价更差）
+            if best_ask is not None and limit_price >= best_ask:
+                return best_ask, ""
+
+            # 如果没有卖盘，则退化为简单逻辑
+            if best_ask is None:
+                if current_price <= limit_price:
+                    return float(current_price), ""
+                return None, f"Limit order price not met (current: {current_price}, limit: {limit_price})"
+
+            # 限价在买一和卖一之间 / 未触碰卖一：视为挂单，目前模拟撮合不维护订单簿，因此返回未成交
+            return None, (
+                f"Limit buy not crossed order book "
+                f"(bid1: {best_bid}, ask1: {best_ask}, price: {limit_price})"
+            )
+
+        else:  # sell
+            # 卖出：如果限价 <= 买一，认为打到买一，在买一价成交
+            if best_bid is not None and limit_price <= best_bid:
+                return best_bid, ""
+
+            # 如果没有买盘，则退化为简单逻辑
+            if best_bid is None:
+                if current_price >= limit_price:
+                    return float(current_price), ""
+                return None, f"Limit order price not met (current: {current_price}, limit: {limit_price})"
+
+            # 限价在买一和卖一之间 / 未触碰买一：视为挂单
+            return None, (
+                f"Limit sell not crossed order book "
+                f"(bid1: {best_bid}, ask1: {best_ask}, price: {limit_price})"
+            )
     
     def _execute_trade(
         self,
@@ -260,7 +358,7 @@ class MatchingEngine:
                 # 获取活跃订单
                 ai_orders = self.db.query(Order).filter(
                     Order.ai_id == ai.id,
-                    Order.status.in_(['pending', 'filled'])
+                    Order.status.in_(['pending', 'filled', 'rejected'])  # 包含被拒绝的订单
                 ).order_by(Order.created_at.desc()).limit(10).all()
 
                 orders.extend([{

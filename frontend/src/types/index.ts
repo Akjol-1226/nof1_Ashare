@@ -37,6 +37,19 @@ export interface Order {
   created_at: string
 }
 
+// 成交记录类型
+export interface Transaction {
+  id: number
+  stock_code: string
+  stock_name: string
+  direction: 'buy' | 'sell'
+  price: number
+  quantity: number
+  amount: number
+  total_fee: number
+  created_at: string
+}
+
 // 投资组合类型
 export interface Portfolio {
   ai_id: number
@@ -51,12 +64,13 @@ export interface Portfolio {
 // 决策日志类型
 export interface DecisionLog {
   id: number
-  timestamp: string
+  decision: string
+  stock_code?: string
+  quantity?: number
   reasoning: string
-  actions: any[]
-  latency_ms: number
-  tokens_used: number
-  error?: string
+  success: boolean
+  execution_time: number
+  created_at: string
 }
 
 // WebSocket消息类型
@@ -72,4 +86,18 @@ export interface Quote {
   price: number
   change_percent: number
   volume: number
+}
+
+export interface AIRanking {
+  ai_id: number
+  ai_name: string
+  total_assets: number
+  return_rate: number
+  positions: Position[]
+  total_profit: number
+}
+
+export interface SystemStatus {
+  status: string
+  message: string
 }

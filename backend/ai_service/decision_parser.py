@@ -185,6 +185,7 @@ class DecisionParser:
                 "stock_code": action["stock_code"],
                 "quantity": int(action["quantity"]),
                 "price_type": action.get("price_type", "market").lower(),
+                "price": action.get("price"),
                 "reason": action.get("reason", "").strip()
             }
             normalized_actions.append(normalized_action)

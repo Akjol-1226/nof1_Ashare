@@ -16,8 +16,8 @@ class AI(Base):
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(100), unique=True, nullable=False)
-    model_type = Column(String(50), nullable=False)  # gpt-4, claude-3, deepseek
-    api_key = Column(String(500))
+    model_name = Column(String(50), nullable=False)  # gpt-4, claude-3, deepseek
+    # API Key从环境变量读取，不存储在数据库中
     system_prompt = Column(Text)  # 系统提示词
     temperature = Column(Float, default=0.7)  # 生成温度
     
@@ -62,7 +62,10 @@ class Position(Base):
     profit = Column(Float, default=0.0)  # 浮动盈亏
     profit_rate = Column(Float, default=0.0)  # 盈亏比例(%)
     
-    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    # T+1相关：记录最后一次交易（买入/卖出）的日期
+    # 注意：这个字段只在买入/卖出时更新，市值更新不影响它
+    last_trade_date = Column(DateTime, default=datetime.now)  # 最后交易日期
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)  # 最后更新时间
     
     # 关系
     ai = relationship("AI", back_populates="positions")

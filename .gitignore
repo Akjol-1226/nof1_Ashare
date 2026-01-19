@@ -22,6 +22,7 @@ wheels/
 
 # Virtual Environment
 venv/
+.venv/
 ENV/
 env/
 
@@ -32,6 +33,7 @@ env/
 # IDE
 .vscode/
 .idea/
+.cursor/
 *.swp
 *.swo
 *~
@@ -55,12 +57,14 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# React build
-/frontend/build
-/frontend/.env.local
-/frontend/.env.development.local
-/frontend/.env.test.local
-/frontend/.env.production.local
+# Next.js
+frontend/.next/
+frontend/build/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/out/
 
 # Testing
 .coverage
@@ -69,3 +73,7 @@ htmlcov/
 
 # Docker
 docker-compose.override.yml
+
+# Project specific
+chart_ref/
+设计参考/

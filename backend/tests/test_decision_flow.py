@@ -47,7 +47,7 @@ def test_decision_flow():
 
         print(f"✅ 找到 {len(ais)} 个激活的AI:")
         for ai in ais:
-            print(f"   • {ai.name} ({ai.model_type})")
+            print(f"   • {ai.name} ({ai.model_name})")
 
     # 3. 测试数据获取
     print("\n3. 测试实时行情获取...")

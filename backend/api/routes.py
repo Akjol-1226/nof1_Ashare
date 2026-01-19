@@ -10,6 +10,7 @@ from datetime import datetime
 
 from models.models import AI, Position, Order, Transaction, DecisionLog
 from database import get_db
+from stock_config import get_stock_name
 
 router = APIRouter()
 
@@ -20,8 +21,7 @@ class AICreate(BaseModel):
     """创建AI请求"""
     name: str
     model_name: str
-    api_key: Optional[str] = None
-    base_url: Optional[str] = None
+    # API Key和base_url从环境变量和ais_config.py读取
     initial_cash: float = 100000.0
 
 
@@ -71,6 +71,12 @@ class OrderResponse(BaseModel):
         from_attributes = True
 
 
+class OrderWithAIResponse(OrderResponse):
+    """带AI信息的订单响应"""
+    ai_id: int
+    ai_name: str
+
+
 class TransactionResponse(BaseModel):
     """成交记录响应"""
     id: int
@@ -117,8 +123,6 @@ def register_ai(ai_data: AICreate, db: Session = Depends(get_db)):
     ai = AI(
         name=ai_data.name,
         model_name=ai_data.model_name,
-        api_key=ai_data.api_key,
-        base_url=ai_data.base_url,
         initial_cash=ai_data.initial_cash,
         current_cash=ai_data.initial_cash,
         total_assets=ai_data.initial_cash,
@@ -156,7 +160,7 @@ def get_ai_portfolio(ai_id: int, db: Session = Depends(get_db)):
         "positions": [
             {
                 "stock_code": p.stock_code,
-                "stock_name": p.stock_name,
+                "stock_name": get_stock_name(p.stock_code) or p.stock_name or p.stock_code,
                 "quantity": p.quantity,
                 "available_quantity": p.available_quantity,
                 "cost_price": p.cost_price,
@@ -213,7 +217,21 @@ def get_ai_ranking(db: Session = Depends(get_db)):
             "total_assets": ai.total_assets,
             "profit_loss": ai.total_assets - ai.initial_cash,
             "return_rate": ((ai.total_assets - ai.initial_cash) / ai.initial_cash * 100) if ai.initial_cash > 0 else 0,
-            "is_active": ai.is_active
+            "is_active": ai.is_active,
+            "positions": [
+                {
+                    "stock_code": p.stock_code,
+                    "stock_name": get_stock_name(p.stock_code) or p.stock_name or p.stock_code,
+                    "quantity": p.quantity,
+                    "available_quantity": p.available_quantity,
+                    "avg_cost": p.avg_cost,
+                    "current_price": p.current_price,
+                    "market_value": p.market_value,
+                    "profit_loss": p.profit,
+                    "profit_loss_percent": p.profit_rate
+                }
+                for p in ai.positions
+            ]
         }
         for idx, ai in enumerate(ais)
     ]
@@ -249,6 +267,34 @@ def get_stock_list():
     }
 
 
+@router.get("/api/market/orders", response_model=List[OrderWithAIResponse])
+def get_all_orders(limit: int = 100, db: Session = Depends(get_db)):
+    """获取全市场最新订单"""
+    # 联表查询 AI 信息
+    results = db.query(Order, AI.name).join(AI, Order.ai_id == AI.id)\
+        .order_by(Order.created_at.desc()).limit(limit).all()
+    
+    # 手动组装响应
+    response_list = []
+    for order, ai_name in results:
+        order_dict = {
+            "id": order.id,
+            "stock_code": order.stock_code,
+            "stock_name": order.stock_name,
+            "direction": order.direction,
+            "order_type": order.order_type,
+            "price": order.price,
+            "quantity": order.quantity,
+            "status": order.status,
+            "created_at": order.created_at,
+            "ai_id": order.ai_id,
+            "ai_name": ai_name
+        }
+        response_list.append(order_dict)
+    
+    return response_list
+
+
 # ==================== 系统控制接口 ====================
 
 class SystemStatus(BaseModel):
@@ -259,34 +305,5 @@ class SystemStatus(BaseModel):
     active_ais: int
 
 
-@router.get("/api/system/status", response_model=SystemStatus)
-def get_system_status(db: Session = Depends(get_db)):
-    """获取系统状态"""
-    from rules.trading_rules import TradingRules
-    
-    trading_rules = TradingRules()
-    total_ais = db.query(AI).count()
-    active_ais = db.query(AI).filter(AI.is_active == True).count()
-    
-    return SystemStatus(
-        is_running=False,  # TODO: 从调度器获取状态
-        trading_time=trading_rules.check_trading_time(),
-        total_ais=total_ais,
-        active_ais=active_ais
-    )
-
-
-@router.post("/api/system/start")
-def start_system():
-    """启动交易系统"""
-    # TODO: 启动调度器
-    return {"message": "System start command sent"}
-
-
-@router.post("/api/system/stop")
-def stop_system():
-    """停止交易系统"""
-    # TODO: 停止调度器
-    return {"message": "System stop command sent"}
 
 

@@ -9,7 +9,9 @@ import { marketWebSocket } from './services/websocket';
 import LeftPanel from './components/LeftPanel/LeftPanel';
 import CenterPanel from './components/CenterPanel/CenterPanel';
 import RightPanel from './components/RightPanel/RightPanel';
+import StockTickerBar from './components/StockTickerBar';
 import './App.css';
+
 
 function App() {
   const { setAIs, setRankings, setSystemStatus, setQuotes } = useAppStore();
@@ -17,7 +19,7 @@ function App() {
   useEffect(() => {
     // 初始化数据
     loadInitialData();
-    
+
     // 连接WebSocket
     marketWebSocket.connect();
     marketWebSocket.onMessage((data) => {
@@ -25,12 +27,12 @@ function App() {
         setQuotes(data.data.quotes || []);
       }
     });
-    
+
     // 定期刷新数据
     const interval = setInterval(() => {
       loadInitialData();
     }, 30000); // 每30秒刷新一次
-    
+
     return () => {
       clearInterval(interval);
       marketWebSocket.disconnect();
@@ -45,7 +47,7 @@ function App() {
         apiService.getAIRanking(),
         apiService.getSystemStatus(),
       ]);
-      
+
       setAIs(ais);
       setRankings(rankings);
       setSystemStatus(status);
@@ -60,7 +62,10 @@ function App() {
         <h1>nof1.AShare</h1>
         <p>A股AI模拟交易竞赛</p>
       </header>
-      
+
+      {/* 股票行情滚动条 */}
+      <StockTickerBar />
+
       <div className="app-layout">
         <LeftPanel />
         <CenterPanel />

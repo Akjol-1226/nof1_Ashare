@@ -52,11 +52,10 @@ def import_ais():
             strategy = config.get('strategy', 'balanced')
             system_prompt = base_prompt + "\n\n" + strategy_prompts.get(strategy, strategy_prompts['balanced'])
             
-            # 创建AI（不存API Key）
+            # 创建AI（API Key从环境变量读取）
             ai = AI(
                 name=config['name'],
-                model_type=config['model_type'],
-                api_key=None,  # ⚠️ 不存储API Key
+                model_name=config['model_name'],
                 system_prompt=system_prompt,
                 temperature=config.get('temperature', 0.7),
                 initial_cash=config.get('initial_cash', 100000.0),
@@ -69,7 +68,7 @@ def import_ais():
             db.add(ai)
             imported_count += 1
             print(f"\n✅ 导入: {config['name']}")
-            print(f"   模型: {config['model_type']}")
+            print(f"   模型: {config['model_name']}")
             print(f"   策略: {config.get('strategy', 'balanced')}")
             print(f"   温度: {config.get('temperature', 0.7)}")
             print(f"   资金: ¥{config.get('initial_cash', 100000):,.0f}")
@@ -85,7 +84,7 @@ def import_ais():
         print("\n当前AI列表:")
         all_ais = db.query(AI).all()
         for ai in all_ais:
-            print(f"  {ai.id}. {ai.name} ({ai.model_type})")
+            print(f"  {ai.id}. {ai.name} ({ai.model_name})")
         
         # 提示设置环境变量
         print("\n💡 重要：运行前请设置环境变量:")

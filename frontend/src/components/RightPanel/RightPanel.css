@@ -153,30 +153,35 @@
   color: #9ca3af;
 }
 
-.orders-view, .decisions-view {
+.orders-view,
+.decisions-view {
   padding: 1rem;
 }
 
-.orders-list, .decisions-list {
+.orders-list,
+.decisions-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
 }
 
-.order-item, .decision-item {
+.order-item,
+.decision-item {
   padding: 1rem;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
 }
 
-.order-header, .decision-header {
+.order-header,
+.decision-header {
   display: flex;
   justify-content: space-between;
   margin-bottom: 0.5rem;
 }
 
-.direction, .decision-type {
+.direction,
+.decision-type {
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
@@ -231,7 +236,8 @@
   color: #dc2626;
 }
 
-.order-body, .decision-action {
+.order-body,
+.decision-action {
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
 }
@@ -243,17 +249,18 @@
   line-height: 1.5;
 }
 
-.order-time, .decision-time {
+.order-time,
+.decision-time {
   font-size: 0.75rem;
   color: #9ca3af;
 }
 
 .positive {
-  color: #10b981;
+  color: #dc2626;
 }
 
 .negative {
-  color: #ef4444;
+  color: #10b981;
 }
 
 .success {
@@ -263,5 +270,3 @@
 .error {
   color: #ef4444;
 }
-
-

@@ -52,7 +52,7 @@ def init_database():
         demo_ais = [
             AI(
                 name="GPT-4 激进型",
-                model_type="gpt-4",
+                model_name="gpt-4",
                 system_prompt=base_prompt + "\n\n" + aggressive_addon,
                 temperature=0.8,
                 initial_cash=100000.0,
@@ -65,7 +65,7 @@ def init_database():
             ),
             AI(
                 name="Claude-3 保守型",
-                model_type="claude-3-sonnet",
+                model_name="claude-3-sonnet",
                 system_prompt=base_prompt + "\n\n" + conservative_addon,
                 temperature=0.5,
                 initial_cash=100000.0,
@@ -78,7 +78,7 @@ def init_database():
             ),
             AI(
                 name="DeepSeek 均衡型",
-                model_type="deepseek-chat",
+                model_name="deepseek-chat",
                 system_prompt=base_prompt + "\n\n" + balanced_addon,
                 temperature=0.7,
                 initial_cash=100000.0,
@@ -107,7 +107,7 @@ def init_database():
         ais = db.query(AI).all()
         print(f"\n   共有 {len(ais)} 个AI:")
         for ai in ais:
-            print(f"   - {ai.name} ({ai.model_type})")
+            print(f"   - {ai.name} ({ai.model_name})")
             print(f"     初始资金: ¥{ai.initial_cash:,.2f}")
             print(f"     状态: {'激活' if ai.is_active else '未激活'}")
     

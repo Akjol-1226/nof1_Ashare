@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     
     # 服务配置
     api_host: str = "0.0.0.0"
-    api_port: int = 8888
+    api_port: int = 8889  # 改为8889，避免与Jupyter Server(8888)冲突
     
     # 交易配置
     initial_cash: float = 100000.0  # 初始资金（元）
@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     openai_base_url: str = "https://api.openai.com/v1"
 
     claude_api_key: Optional[str] = None
+    anthropic_api_key: Optional[str] = None  # Anthropic官方API key
 
     # DeepSeek
     deepseek_api_key: Optional[str] = None
@@ -50,11 +51,15 @@ class Settings(BaseSettings):
     moonshot_api_key: Optional[str] = None
     moonshot_base_url: str = "https://api.moonshot.cn/v1"
     
+    # Biying (必应数据接口)
+    biying_license: Optional[str] = None
+    biying_base_url: str = "http://api.biyingapi.com"
+    
     # 日志配置
     log_level: str = "INFO"
     
     class Config:
-        env_file = ".env"
+        env_file = "../.env"  # .env文件在项目根目录
         case_sensitive = False
 
 

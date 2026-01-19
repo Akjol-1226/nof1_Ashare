@@ -4,13 +4,14 @@ LLM适配器工厂
 """
 
 import os
+import sys
 import logging
 from typing import Optional
 from .openai_adapter import OpenAIAdapter
-import sys
-import os
+
+# 添加backend目录到Python路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from backend.config import settings
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -53,11 +54,11 @@ class LLMAdapterFactory:
             adapter = OpenAIAdapter(
                 api_key=api_key,
                 base_url=ai_config['base_url'],
-                model_name=ai_config['model_type']
+                model_name=ai_config['model_name']
             )
             adapter.initialize_client()
 
-            logger.info(f"创建适配器成功: {ai_name} ({ai_config['model_type']})")
+            logger.info(f"创建适配器成功: {ai_name} ({ai_config['model_name']})")
             return adapter
 
         except Exception as e:

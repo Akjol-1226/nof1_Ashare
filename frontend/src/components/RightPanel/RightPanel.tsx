@@ -18,6 +18,7 @@ const RightPanel: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [decisions, setDecisions] = useState<DecisionLog[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedAI = rankings[selectedAIIndex];
 
@@ -29,8 +30,9 @@ const RightPanel: React.FC = () => {
 
   const loadData = async () => {
     if (!selectedAI) return;
-    
+
     setLoading(true);
+    setError(null);
     try {
       if (activeTab === 'portfolio') {
         const data = await apiService.getAIPortfolio(selectedAI.ai_id);
@@ -44,6 +46,7 @@ const RightPanel: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load data:', error);
+      setError('数据加载失败，请点击标签页重试');
     } finally {
       setLoading(false);
     }
@@ -65,19 +68,19 @@ const RightPanel: React.FC = () => {
           className={`tab ${activeTab === 'portfolio' ? 'active' : ''}`}
           onClick={() => setActiveTab('portfolio')}
         >
-          Portfolio
+          持仓
         </button>
         <button
           className={`tab ${activeTab === 'orders' ? 'active' : ''}`}
           onClick={() => setActiveTab('orders')}
         >
-          Orders
+          订单
         </button>
         <button
           className={`tab ${activeTab === 'decisions' ? 'active' : ''}`}
           onClick={() => setActiveTab('decisions')}
         >
-          Decision Log
+          决策日志
         </button>
       </div>
 
@@ -111,6 +114,8 @@ const RightPanel: React.FC = () => {
       <div className="content">
         {loading ? (
           <div className="loading">加载中...</div>
+        ) : error ? (
+          <div className="empty-state text-red-500">{error}</div>
         ) : rankings.length === 0 ? (
           <div className="empty-state">暂无AI参赛者</div>
         ) : (
@@ -129,15 +134,15 @@ const RightPanel: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="positions-table">
                   {portfolio.positions.length > 0 ? (
                     <table>
                       <thead>
                         <tr>
-                          <th>代码</th>
-                          <th>持仓</th>
-                          <th>盈亏</th>
+                          <th>股票代码</th>
+                          <th>持仓数量</th>
+                          <th>盈亏比例</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -214,7 +219,7 @@ const RightPanel: React.FC = () => {
                           <div className="decision-reasoning">{decision.reasoning}</div>
                         )}
                         <div className="decision-time">
-                          {new Date(decision.created_at).toLocaleString('zh-CN')} 
+                          {new Date(decision.created_at).toLocaleString('zh-CN')}
                           {' '}({decision.execution_time.toFixed(2)}s)
                         </div>
                       </div>

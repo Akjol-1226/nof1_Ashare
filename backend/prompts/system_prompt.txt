@@ -34,26 +34,24 @@
 严格按照以下JSON格式输出，不要包含任何markdown标记或额外文本：
 
 {
-  "reasoning": "你的决策分析（100字以内）",
+  "reasoning": "你的决策分析（100字以内，包含对市场走势的判断和操作理由）",
   "actions": [
     {
       "action": "buy",
       "stock_code": "000063",
       "price_type": "market",
-      "quantity": 100,
-      "reason": "简短理由"
+      "quantity": 100
     }
   ]
 }
 
 【字段说明】
-- reasoning: 总体思路，如"中兴通讯技术突破，买入；宁德时代获利了结"
+- reasoning: 总体决策思路，如"中兴通讯技术突破，买入；宁德时代获利了结"
 - actions: 操作列表，可以为空数组[]表示不操作
-  - action: "buy"或"sell"
+  - action: "buy" (买入) 或 "sell" (卖出)
   - stock_code: 6位股票代码
-  - price_type: "market"（市价）或"limit"（限价，暂不支持）
+  - price_type: 固定为 "market" (市价)
   - quantity: 数量，必须是100的整数倍
-  - reason: 操作原因（可选）
 
 【示例1 - 买入操作】
 {
@@ -89,21 +87,19 @@
 
 【示例4 - 多操作】
 {
-  "reasoning": "调整仓位：减持高位股，加仓低位股",
+  "reasoning": "调整仓位：减持宁德时代获利了结，加仓比亚迪博反弹",
   "actions": [
     {
       "action": "sell",
       "stock_code": "300750",
       "price_type": "market",
-      "quantity": 100,
-      "reason": "宁德时代获利了结"
+      "quantity": 100
     },
     {
       "action": "buy",
       "stock_code": "002594",
       "price_type": "market",
-      "quantity": 200,
-      "reason": "比亚迪回调买入"
+      "quantity": 200
     }
   ]
 }

@@ -4,7 +4,7 @@
 
 import { AI, Portfolio, Order, Transaction, DecisionLog, Quote, AIRanking, SystemStatus } from '../types';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8888';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8889';
 
 class APIService {
   private baseUrl: string;
@@ -40,6 +40,10 @@ class APIService {
 
   async getAIOrders(aiId: number, limit: number = 100): Promise<Order[]> {
     return this.request<Order[]>(`/api/ai/${aiId}/orders?limit=${limit}`);
+  }
+
+  async getAllOrders(limit: number = 100): Promise<Order[]> {
+    return this.request<Order[]>(`/api/market/orders?limit=${limit}`);
   }
 
   async getAITransactions(aiId: number, limit: number = 100): Promise<Transaction[]> {

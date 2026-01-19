@@ -1,222 +1,354 @@
-# nof1.AShare - A股AI模拟交易系统
+# nof1.AShare - A股AI模拟交易竞赛平台 🏆
 
-> 基于AKShare的A股AI模拟交易竞赛平台，让不同的AI模型进行实时交易对决
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.9+-blue.svg" alt="Python">
+  <img src="https://img.shields.io/badge/FastAPI-0.104+-green.svg" alt="FastAPI">
+  <img src="https://img.shields.io/badge/React-18-61dafb.svg" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-5-blue.svg" alt="TypeScript">
+  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
+</p>
 
-## 项目简介
+> 🤖 让多个AI模型使用虚拟资金在A股市场展开实时交易对决！观看Qwen, DeepSeek等AI的交易策略与收益曲线，体验AI炒股的乐趣与魅力。
 
-nof1.AShare是一个A股市场的AI模拟交易系统，参考了nof1.ai项目的设计理念。系统支持多个LLM进行实时交易决策，严格遵守A股交易规则（T+1、涨跌停、最小交易单位等），通过AKShare获取真实市场数据。
+## ✨ 项目亮点
 
-### 核心特性
+- **🎮 多AI实时对战** - 多个LLM模型同场竞技，实时观看交易决策
+- **📊 真实市场规则** - 完整遵守A股T+1、涨跌停、手续费等规则
+- **📈 实时可视化** - 收益曲线、持仓变化、决策日志一目了然
+- **🔌 多LLM支持** - 支持DeepSeek、Qwen、Kimi等主流模型
+- **⚡ 极速响应** - WebSocket实时推送，毫秒级数据更新
 
-- ✅ 真实市场数据（AKShare）
-- ✅ A股交易规则（T+1、涨跌停、手续费）
-- ✅ 多LLM支持（OpenAI、Claude、DeepSeek）
-- ✅ 实时交易撮合
-- ✅ WebSocket实时推送
-- ✅ 三栏可视化界面
-- ✅ 6只精选可交易股票（中兴通讯、宁德时代、三安光电、比亚迪、寒武纪、恒瑞医药）
+## 📸 界面预览
 
-## 技术栈
+<div align="center">
+<table>
+<tr>
+<td align="center"><b>主界面 - 三栏布局</b></td>
+</tr>
+<tr>
+<td>
+<pre>
+┌─────────────┬────────────────────┬─────────────────┐
+│   AI列表    │    收益曲线图表      │  持仓/订单/日志  │
+│   排行榜    │    (多AI对比)       │                 │
+│   系统控制  │    实时行情滚动     │                 │
+└─────────────┴────────────────────┴─────────────────┘
+</pre>
+</td>
+</tr>
+</table>
+</div>
 
-### 后端
-- Python 3.9+
-- FastAPI（Web框架）
-- SQLAlchemy（ORM）
-- AKShare（数据源）
-- APScheduler（任务调度）
+## 🏗️ 技术架构
 
-### 前端
-- React 18 + TypeScript
-- Tailwind CSS
-- Recharts（图表）
-- WebSocket
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    前端 (Next.js + React)                    │
+│           TypeScript + Tailwind CSS + Recharts              │
+└────────────────────────────┬────────────────────────────────┘
+                             │ HTTP REST + WebSocket
+┌────────────────────────────┴────────────────────────────────┐
+│                       后端 (FastAPI)                         │
+│  ┌──────────┬────────────┬────────────┬────────────────┐   │
+│  │ API路由  │  AI调度器   │  交易引擎   │   规则引擎     │   │
+│  │          │            │            │               │   │
+│  │ ・AI管理  │ ・10秒周期  │ ・订单管理  │ ・T+1规则     │   │
+│  │ ・市场数据│ ・LLM调用   │ ・撮合引擎  │ ・涨跌停      │   │
+│  │ ・系统控制│ ・决策解析  │ ・持仓管理  │ ・手续费      │   │
+│  └──────────┴────────────┴────────────┴────────────────┘   │
+│                              │                              │
+│  ┌───────────────────────────┴───────────────────────────┐  │
+│  │              数据层 (SQLAlchemy + SQLite/PostgreSQL)   │  │
+│  └───────────────────────────────────────────────────────┘  │
+└──────────────────────────────┬──────────────────────────────┘
+                               │
+         ┌─────────────────────┼─────────────────────┐
+         │                     │                     │
+   ┌─────┴─────┐         ┌─────┴─────┐        ┌─────┴─────┐
+   │  AKShare  │         │ LLM APIs  │        │  Biying   │
+   │ (历史数据) │         │ (AI决策)  │        │ (实时行情) │
+   └───────────┘         └───────────┘        └───────────┘
+```
 
-## 快速开始
+## 🛠️ 技术栈
 
-### 1. 安装依赖
+| 层级 | 技术 |
+|------|------|
+| **前端** | Next.js 14, React 18, TypeScript 5, Tailwind CSS, Recharts |
+| **后端** | Python 3.9+, FastAPI, SQLAlchemy, APScheduler |
+| **数据源** | AKShare (历史K线), Biying API (实时行情) |
+| **AI模型** | OpenAI GPT-4, Claude, DeepSeek, Qwen, Kimi |
+| **数据库** | SQLite (开发), PostgreSQL (生产) |
+| **缓存** | Redis (可选) |
+| **部署** | Docker, Docker Compose |
+
+## 🚀 快速开始
+
+### 1. 克隆项目
 
 ```bash
-# 安装Python依赖
+git clone https://github.com/your-username/nof1.Ashare.git
+cd nof1.Ashare
+```
+
+### 2. 安装后端依赖
+
+```bash
+# 创建虚拟环境（推荐）
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# 或 .venv\Scripts\activate  # Windows
+
+# 安装依赖
 pip install -r requirements.txt
 ```
 
-### 2. 配置环境变量
-
-复制`env.example`到`.env`并填写配置：
+### 3. 配置环境变量
 
 ```bash
 cp env.example .env
 ```
 
-编辑`.env`文件，添加你的LLM API密钥：
+编辑 `.env` 文件，配置以下内容：
 
 ```ini
-# OpenAI配置
+# 实时行情接口（可选，使用AKShare默认接口）
+BIYING_LICENSE=your-license-key
+
+# LLM API密钥（至少配置一个）
 OPENAI_API_KEY=sk-...
-OPENAI_BASE_URL=https://api.openai.com/v1
-
-# Claude配置
-CLAUDE_API_KEY=sk-ant-...
-
-# DeepSeek配置
 DEEPSEEK_API_KEY=sk-...
+DASHSCOPE_API_KEY=sk-...     # 阿里云百炼 (Qwen)
+MOONSHOT_API_KEY=sk-...       # 月之暗面 (Kimi)
 ```
 
-### 3. 初始化数据库
+### 4. 初始化数据库
 
 ```bash
 cd backend
 python -c "from database import init_db; init_db()"
 ```
 
-### 4. 启动后端服务
+### 5. 启动后端服务
 
 ```bash
 cd backend
 python main.py
 ```
 
-服务将在 http://localhost:8888 启动
+后端API文档：http://localhost:8888/docs
 
-### 5. 访问API文档
-
-浏览器访问：http://localhost:8888/docs
-
-## API接口
-
-### AI管理
-- `POST /api/ai/register` - 注册AI
-- `GET /api/ai/list` - 获取AI列表
-- `GET /api/ai/{ai_id}/portfolio` - 获取持仓
-- `GET /api/ai/{ai_id}/orders` - 获取订单历史
-- `GET /api/ai/{ai_id}/decisions` - 获取决策日志
-- `GET /api/ai/ranking` - 获取排行榜
-
-### 市场数据
-- `GET /api/market/quotes` - 获取实时行情
-- `GET /api/market/stocks` - 获取股票列表
-
-### 系统控制
-- `POST /api/system/start` - 启动交易
-- `POST /api/system/stop` - 停止交易
-- `GET /api/system/status` - 系统状态
-
-### WebSocket
-- `ws://localhost:8000/ws/market` - 市场数据推送
-- `ws://localhost:8000/ws/trading` - 交易数据推送
-
-## 使用示例
-
-### 注册AI
+### 6. 安装并启动前端
 
 ```bash
-curl -X POST "http://localhost:8000/api/ai/register" \
+cd frontend
+npm install
+npm run dev
+```
+
+前端界面：http://localhost:3002
+
+## 📝 注册AI交易者
+
+### 方法一：批量导入（推荐）
+
+项目预配置了3个AI交易者，编辑 `backend/ais_config.py` 自定义后运行：
+
+```bash
+cd backend
+python scripts/import_ais.py
+```
+
+**预设AI配置：**
+
+| AI名称 | 模型 | 策略 | 初始资金 |
+|--------|------|------|----------|
+| Qwen3-Max | qwen-plus | 保守型 | ¥500,000 |
+| Kimi K2 | kimi-k2-turbo-preview | 平衡型 | ¥500,000 |
+| DeepSeek V3.1 | deepseek-chat | 激进型 | ¥500,000 |
+
+### 方法二：通过API注册
+
+```bash
+curl -X POST "http://localhost:8888/api/ai/register" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "GPT-4 Trader",
-    "model_name": "gpt-4",
-    "api_key": "sk-...",
-    "base_url": "https://api.openai.com/v1",
-    "initial_cash": 100000.0
+    "name": "DeepSeek 激进型",
+    "model_name": "deepseek-chat",
+    "initial_cash": 500000.0
   }'
 ```
 
-### 启动交易系统
+## 🎮 启动交易
+
+### 正常模式（仅交易时段运行）
 
 ```bash
-curl -X POST "http://localhost:8000/api/system/start"
+curl -X POST "http://localhost:8888/api/system/start"
 ```
 
-### 查看排行榜
+### 测试模式（24小时运行）
 
 ```bash
-curl "http://localhost:8000/api/ai/ranking"
+curl -X POST "http://localhost:8888/api/system/start?force_run=true"
 ```
 
-## 项目结构
+## 📊 可交易股票
+
+系统限定6只精选A股：
+
+| 代码 | 名称 | 市场 | 特点 |
+|------|------|------|------|
+| 000063 | 中兴通讯 | 深A | 通信设备龙头 |
+| 300750 | 宁德时代 | 创业板 | 新能源电池龙头 |
+| 600703 | 三安光电 | 沪A | LED芯片龙头 |
+| 002594 | 比亚迪 | 深A | 新能源汽车龙头 |
+| 688256 | 寒武纪 | 科创板 | AI芯片龙头 |
+| 600276 | 恒瑞医药 | 沪A | 医药龙头 |
+
+## 📋 A股交易规则
+
+| 规则 | 说明 |
+|------|------|
+| **T+1** | 当日买入的股票次日才能卖出 |
+| **涨跌停** | 普通股票±10%，ST股票±5%，科创板/创业板±20% |
+| **最小单位** | 100股（1手） |
+| **佣金** | 万2.5（最低5元） |
+| **印花税** | 0.1%（仅卖出） |
+| **过户费** | 万0.1 |
+
+## 📁 项目结构
 
 ```
-nof1.Ashare/
-├── backend/
+nof1.AShare/
+├── backend/                    # 后端服务
 │   ├── main.py                 # FastAPI入口
 │   ├── config.py               # 配置管理
 │   ├── database.py             # 数据库连接
-│   ├── data_service/           # AKShare封装
-│   │   └── akshare_client.py
-│   ├── rules/                  # A股规则引擎
-│   │   └── trading_rules.py
+│   ├── ai_service/             # AI调度服务
+│   │   ├── ai_scheduler.py     # AI调度器
+│   │   ├── decision_parser.py  # 决策解析器
+│   │   ├── prompt_builder.py   # Prompt构建器
+│   │   └── llm_adapters/       # 多LLM适配器
+│   │       ├── openai_adapter.py
+│   │       ├── claude_adapter.py
+│   │       └── deepseek_adapter.py
+│   ├── data_service/           # 数据服务
+│   │   └── akshare_client.py   # AKShare封装
 │   ├── trading_engine/         # 交易引擎
-│   │   ├── order_manager.py
-│   │   └── matching_engine.py
+│   │   ├── order_manager.py    # 订单管理
+│   │   └── matching_engine.py  # 撮合引擎
 │   ├── portfolio/              # 持仓管理
 │   │   └── portfolio_manager.py
-│   ├── ai_service/             # AI调度
-│   │   ├── ai_scheduler.py
-│   │   └── llm_adapters/
+│   ├── rules/                  # A股规则引擎
+│   │   └── trading_rules.py
 │   ├── models/                 # 数据库模型
 │   │   └── models.py
-│   └── api/                    # API路由
-│       └── routes.py
-├── frontend/                   # 前端项目（待实现）
+│   ├── api/                    # API路由
+│   │   └── routes.py
+│   └── prompts/                # Prompt模板
+├── frontend/                   # 前端服务
+│   ├── src/
+│   │   ├── app/                # Next.js App Router
+│   │   ├── components/         # React组件
+│   │   │   ├── CenterPanel/    # 中间面板
+│   │   │   ├── LeftPanel/      # 左侧面板
+│   │   │   ├── RightPanel/     # 右侧面板
+│   │   │   └── v2/             # 新版UI组件
+│   │   ├── services/           # API/WebSocket服务
+│   │   ├── store/              # 状态管理
+│   │   └── types/              # TypeScript类型
+│   ├── tailwind.config.ts      # Tailwind配置
+│   └── package.json
+├── docker-compose.yml          # Docker编排
 ├── requirements.txt            # Python依赖
 ├── env.example                 # 环境变量示例
-└── README.md                   # 项目文档
+└── README.md
 ```
 
-## 交易规则
+## 🔌 API接口
 
-### A股规则
-- **T+1**: 当日买入的股票次日才能卖出
-- **涨跌停**: 普通股票±10%，ST股票±5%
-- **最小交易单位**: 100股（1手）
-- **手续费**:
-  - 佣金: 万2.5（最低5元）
-  - 印花税: 0.1%（仅卖出）
-  - 过户费: 万0.1
+### AI管理
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| POST | `/api/ai/register` | 注册AI |
+| GET | `/api/ai/list` | 获取AI列表 |
+| GET | `/api/ai/{id}/portfolio` | 获取持仓 |
+| GET | `/api/ai/{id}/orders` | 获取订单历史 |
+| GET | `/api/ai/{id}/decisions` | 获取决策日志 |
+| GET | `/api/ai/ranking` | 获取排行榜 |
 
-### 交易时间
-- 周一至周五
-- 上午: 9:30-11:30
-- 下午: 13:00-15:00
+### 市场数据
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| GET | `/api/market/quotes` | 获取实时行情 |
+| GET | `/api/market/stocks` | 获取股票列表 |
 
-## 撮合方案
+### 系统控制
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| POST | `/api/system/start` | 启动交易系统 |
+| POST | `/api/system/stop` | 停止交易系统 |
+| GET | `/api/system/status` | 获取系统状态 |
 
-### 方案A（当前实现 - MVP）
-- 市价单: 立即按当前价成交
-- 限价单: 价格匹配时成交
-- 简单快速，适合原型验证
+### WebSocket
+| 端点 | 说明 |
+|------|------|
+| `ws://localhost:8888/ws/market` | 市场行情推送 |
+| `ws://localhost:8888/ws/trading` | 交易数据推送 |
+| `ws://localhost:8888/ws/chats` | AI决策日志推送 |
+| `ws://localhost:8888/ws/performance` | 收益曲线推送 |
 
-### 方案C（已预留接口）
-- 考虑滑点: 根据成交量计算价格偏差
-- 成交量限制: 单笔订单不超过市场总量的一定比例
-- 更接近真实交易
+## 🐳 Docker部署
 
-## 开发计划
+```bash
+# 构建并启动所有服务
+docker-compose up -d
 
-- [x] AKShare接口验证
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+```
+
+## 📈 开发计划
+
+- [x] AKShare数据接口
 - [x] 后端核心系统
-- [x] 数据库模型
-- [x] 交易引擎
+- [x] 交易引擎与规则
 - [x] AI调度器
 - [x] REST API
-- [ ] WebSocket推送
-- [ ] 前端界面
-- [ ] Docker部署
-- [ ] 性能优化
+- [x] WebSocket推送
+- [x] 前端三栏布局
+- [x] 收益曲线图表
+- [x] 持仓与订单展示
+- [ ] AI策略编辑器
+- [ ] 回测功能
+- [ ] 更多LLM支持
+- [ ] 移动端适配
 
-## 注意事项
+## ⚠️ 注意事项
 
-1. AKShare数据有延迟（约3-5秒），不是逐笔行情
-2. 非交易时间段系统会跳过决策周期
-3. LLM API调用有超时限制（默认5秒）
-4. 建议使用代理服务加速LLM API访问
-5. 生产环境应该使用PostgreSQL替代SQLite
+1. **数据延迟** - AKShare数据有约3-5秒延迟，非逐笔行情
+2. **交易时间** - 非交易时段系统自动暂停决策（可用测试模式）
+3. **API超时** - LLM API默认超时5秒，请确保网络稳定
+4. **资源消耗** - 多AI并发时注意LLM API配额
+5. **生产环境** - 建议使用PostgreSQL替代SQLite
 
-## 许可证
+## 🙏 致谢
+
+- [AKShare](https://github.com/akfamily/akshare) - A股数据接口
+- [nof1.ai](https://nof1.ai) - 项目设计灵感来源
+- [FastAPI](https://fastapi.tiangolo.com/) - 高性能Web框架
+- [Next.js](https://nextjs.org/) - React全栈框架
+
+## 📄 许可证
 
 MIT License
 
-## 致谢
+---
 
-- [AKShare](https://github.com/akfamily/akshare) - 提供A股数据
-- [nof1.ai](https://nof1.ai) - 项目灵感来源
+<p align="center">
+  <b>🌟 如果觉得这个项目有用，请给个Star支持一下！ 🌟</b>
+</p>
